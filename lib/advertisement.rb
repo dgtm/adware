@@ -17,7 +17,7 @@ class Advertisement
 
   def ==(another)
     compare(another)
-    differences.present?
+    differences.empty?
   end
 
   def compare(another)
