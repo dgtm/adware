@@ -1,28 +1,56 @@
 # Adware
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/adware`. To experiment with that code, run `bin/console` for an interactive prompt.
 
-TODO: Delete this and the text above, and describe your gem
+Find differences between local system and remote API
 
 ## Installation
 
-Add this line to your application's Gemfile:
+* Clone this repository
 
-```ruby
-gem 'adware'
-```
+* And then execute:
 
-And then execute:
+    `$ bundle`
 
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install adware
+* Run `rspec`
 
 ## Usage
 
-TODO: Write usage instructions here
+Run `./bin/demo` to get a preview of the response from library. You can modify the array of campaigns in the file to check for more differences.
+
+List of Campaign Objects look like
+```
+  [
+    <Campaign id=1, external_reference="2", status="paused", ad_description="Description for campaign 12">,
+    <Campaign id=2, external_reference="3", status="active", ad_description="Description for campaign 13">,
+    <Campaign id=3, external_reference="1", status="active", ad_description="Description for campaign 11">
+   ]
+```
+Currently, the campaigns are not persisted to the database.
+`Adware#find_differences` returns a list of differences. To find differences with the remote API, run
+
+`Adware.find_differences(list_of_campaigns)`
+
+This returns an array of differences that look like:
+
+```
+[
+  {
+    :reference_id => "1",
+    :differences => [{
+      :description =>
+        {:one=>"Description for campaign 14", :another=>"Description for campaign 11"}
+      }]
+  },
+  {
+    :reference_id => "5",
+    :differences => [{
+      :base=>["Object not found in local"]
+    }]
+  }
+]
+```
+Differences with the values are stored under the corresponding key name. Differences with objects that are present in local but not in remote or vise-versa are stored inside the `:base` key
+
 
 ## Development
 

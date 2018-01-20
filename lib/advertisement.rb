@@ -21,7 +21,6 @@ class Advertisement
   end
 
   def compare(another)
-    return {} unless another.reference_id
     self.class.fields_to_compare.each do |field|
     value_for_self = self.send(field)
     value_for_another = another.send(field)

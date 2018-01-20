@@ -1,5 +1,6 @@
 require "spec_helper"
 require_relative "../lib/adware"
+
 describe Advertisement do
   describe "Comparisons" do
     let(:ad_one) { Advertisement.new(reference_id: 1, status: "active", description: "It is active!" ) }

@@ -1,65 +1,48 @@
 require "adware/version"
 require "advertisement"
+require "campaign"
 require "advertisement_list"
 
 module Adware
-  def self.default_local_campaigns
-    [
-      {
-        id: 1,
-        external_reference: "2",
-        status: "paused",
-        description: "Join here soon"
-      },
-      {
-        id: 2,
-        external_reference: "3",
-        status: "active",
-        description: "Description for campaign 13"
+  class Base
+    class << self
+      STATUS_MAPPINGS = {
+        "enabled" => "active",
+        "disabled" => "paused"
       }
-    ]
-  end
 
-  def self.default_remote_campaigns
-    {
-      ads: [
-        {
-          reference: "1",
-          status: "enabled",
-          description: "Description for campaign 11"
-        },
-        {
-          reference: "2",
-          status: "disabled",
-          description: "Description for campaign 12"
-        },
-        {
-          reference: "3",
-          status: "enabled",
-          description: "Description for campaign 13"
-        }
-      ]
-    }
-  end
+      # @return [Array<Hash>]
+      # Returns a list of differences that looks like
+      #[{
+      #  :reference_id=>"3", :differences=>[{
+      #     :status => { :one=>"deleted", :another=>"active" }
+      #   }]
+      # }]
+      def find_differences(list_of_campaigns)
+        local = serialized_local_campaigns(list_of_campaigns)
+        ad_list_comparator = AdvertisementList.new(local, serialized_remote_campaigns)
+        ad_list_comparator.compare
+        ad_list_comparator.differences
+      end
 
-  def compare
-    # Ad.new(id: reference, status: status, description: description)
-    #
-    # available_campaigns = campaigns.map do |campaign|
-    #   app_obj = Ad.new(id: campaign.external_reference, status: campaign.status, description: campaign.ad_description)
-    #   ad_service_element = ad_service_listing.find{|l| campaign.external_reference == l[:reference] }
-    #   ad_service_obj = Ad.new(ad_service_element)
-    #
-    #   # unless app_obj == ad_service_obj
-    #   #   {
-    #   #     reference_id:
-    #   #   }
-    #   # end
-    # end
-  end
+      private
+      # Serialize the key/values from the model before passing for comparison
+      def serialized_local_campaigns(campaigns = Campaign.all)
+        campaigns.map do |campaign|
+          # Because ruby does not have #blank?
+          reference_available = !campaign.external_reference.empty? && !campaign.external_reference.nil?
+          # Use the id of the campaign if there is no external_reference_id saved in the campaign
+          reference_id = reference_available ? campaign.external_reference : campaign.id.to_s
+          Advertisement.new(reference_id: reference_id, status: campaign.status, description: campaign.ad_description)
+        end
+      end
 
-  STATUS_MAPPINGS = {
-    active: :enabled,
-    paused: :disabled
-  }
+      def serialized_remote_campaigns
+        Campaign.remote_data.map do |campaign|
+          status = STATUS_MAPPINGS[campaign['status']] || campaign['status']
+          Advertisement.new(reference_id: campaign['reference'], status: status, description: campaign['description'])
+        end
+      end
+    end
+  end
 end
